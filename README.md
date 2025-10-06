@@ -39,7 +39,7 @@ LLMs handle Markdown files better than raw code pasted in chat. Markdown preserv
 
 ```bash
 # Clone the repo
-git clone [your-repo-url]
+git clone https://github.com/MahmudZar/Code-Exporter?tab=readme-ov-file
 
 # Open index.html in your browser
 open index.html
