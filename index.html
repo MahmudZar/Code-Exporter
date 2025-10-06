@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeExporter</title>
+
+    <!-- CodeMirror -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/markdown/markdown.min.js"></script>
+
+    <!-- Split.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.5/split.min.js"></script>
+
+    <style>
+        :root {
+            /* Grey - Primitive */
+            --grey-1000: #050505;
+            --grey-950: #111111;
+            --grey-900: #1C1C1C;
+            --grey-850: #262626;
+            --grey-800: #303030;
+            --grey-750: #3B3B3B;
+            --grey-700: #474747;
+            --grey-650: #525252;
+            --grey-600: #5E5E5E;
+            --grey-550: #6B6B6B;
+            --grey-500: #777777;
+            --grey-450: #848484;
+            --grey-400: #919191;
+            --grey-350: #9E9E9E;
+            --grey-300: #ABABAB;
+            --grey-250: #B9B9B9;
+            --grey-200: #C6C6C6;
+            --grey-150: #D4D4D4;
+            --grey-100: #E2E2E2;
+            --grey-50: #F1F1F1;
+
+            /* Primary Colors */
+            --primary-50: #ffffe4;
+            --primary-100: #fcffc6;
+            --primary-200: #f6ff93;
+            --primary-300: #ebff54;
+            --primary-400: #e0fa3c;
+            --primary-500: #bee002;
+            --primary-600: #93b300;
+            --primary-700: #6f8803;
+            --primary-800: #586b09;
+            --primary-900: #4a5a0d;
+            --primary-950: #263201;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--grey-950);
+            color: var(--grey-100);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Header */
+        header {
+            background: var(--grey-900);
+            border-bottom: 1px solid var(--grey-800);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-400);
+            letter-spacing: -0.5px;
+        }
+
+        .project-name-input {
+            flex: 1;
+            max-width: 300px;
+            padding: 8px 12px;
+            background: var(--grey-850);
+            border: 1px solid var(--grey-750);
+            border-radius: 6px;
+            color: var(--grey-100);
+            font-size: 14px;
+        }
+
+        .project-name-input:focus {
+            outline: none;
+            border-color: var(--primary-600);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            margin-left: auto;
+        }
+
+        button {
+            padding: 8px 16px;
+            background: var(--primary-400);
+            color: var(--grey-950);
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: var(--primary-300);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: var(--grey-750);
+            color: var(--grey-100);
+        }
+
+        button.secondary:hover {
+            background: var(--grey-700);
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 49px);
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            background: var(--grey-900);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: var(--grey-850);
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--grey-800);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--grey-300);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Code Editors */
+        .editors-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .editor-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .CodeMirror {
+            height: 100% !important;
+            font-size: 13px;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        /* CodeMirror Background Color Update */
+        .cm-s-dracula .CodeMirror-gutters,
+        .cm-s-dracula.CodeMirror {
+            background-color: var(--grey-900) !important;
+        }
+
+        /* Preview */
+        #preview-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        /* Export Panel */
+        .export-options {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--grey-200);
+            margin-bottom: 8px;
+        }
+
+        .export-button {
+            width: 100%;
+            padding: 12px;
+            font-size: 15px;
+            margin-top: 10px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 5, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--grey-900);
+            border: 1px solid var(--grey-750);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.show .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--grey-800);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--grey-100);
+        }
+
+        .modal-close {
+            background: transparent;
+            padding: 4px 8px;
+            font-size: 24px;
+            color: var(--grey-400);
+            border: none;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--grey-100);
+            background: transparent;
+            transform: none;
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-section {
+            margin-bottom: 24px;
+        }
+
+        .modal-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--grey-300);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .checkbox-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: var(--grey-850);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 8px;
+        }
+
+        .checkbox-option:hover {
+            background: var(--grey-800);
+        }
+
+        .checkbox-option input[type="checkbox"] {
+            margin: 0;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: var(--grey-600);
+            border: 1px solid var(--grey-400);
+            border-radius: 3px;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .checkbox-option input[type="checkbox"]:hover {
+            border-color: var(--primary-500);
+        }
+
+        .checkbox-option input[type="checkbox"]:checked {
+            background: var(--primary-400);
+            border-color: var(--primary-400);
+        }
+
+        .checkbox-option input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--grey-950);
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .checkbox-option-content {
+            flex: 1;
+        }
+
+        .checkbox-option-label {
+            font-size: 14px;
+            color: var(--grey-100);
+            font-weight: 500;
+        }
+
+        .checkbox-option-desc {
+            font-size: 12px;
+            color: var(--grey-400);
+            margin-top: 2px;
+        }
+
+        .checkbox-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .checkbox-option.disabled:hover {
+            background: var(--grey-850);
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: var(--grey-850);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .radio-option:hover {
+            background: var(--grey-800);
+        }
+
+        .radio-option input[type="radio"] {
+            margin: 0;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: var(--grey-600);
+            border: 1px solid var(--grey-400);
+            border-radius: 50%;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .radio-option input[type="radio"]:hover {
+            border-color: var(--primary-500);
+        }
+
+        .radio-option input[type="radio"]:checked {
+            background: var(--primary-400);
+            border-color: var(--primary-400);
+        }
+
+        .radio-option input[type="radio"]:checked::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: var(--grey-950);
+            border-radius: 50%;
+        }
+
+        .radio-option span {
+            font-size: 14px;
+            color: var(--grey-200);
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--grey-800);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modal-footer button {
+            min-width: 100px;
+        }
+
+        /* Markdown Preview */
+        .markdown-preview {
+            padding: 20px;
+            height: 100%;
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--grey-200);
+            background: var(--grey-900);
+        }
+
+        .markdown-preview pre {
+            background: var(--grey-850);
+            padding: 12px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .markdown-preview code {
+            color: var(--primary-400);
+        }
+
+        /* Gutter */
+        .gutter {
+            background: var(--grey-900);
+            background-repeat: no-repeat;
+            background-position: 50%;
+            cursor: col-resize;
+            transition: background 0.2s;
+        }
+
+        .gutter:hover {
+            background: var(--grey-800);
+        }
+
+        .gutter-vertical {
+            cursor: row-resize;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            background: var(--grey-850);
+            border: 1px solid var(--grey-750);
+            border-radius: 8px;
+            color: var(--grey-100);
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.error {
+            background: #dc3545;
+            border-color: #c82333;
+            color: white;
+        }
+
+        .toast.success {
+            background: var(--primary-400);
+            border-color: var(--primary-500);
+            color: var(--grey-950);
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 40px;
+            text-align: center;
+            color: var(--grey-500);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Custom scrollbars for CodeMirror */
+        .CodeMirror-scrollbar-filler,
+        .CodeMirror-gutter-filler {
+            background-color: var(--grey-900);
+        }
+
+        .CodeMirror-vscrollbar,
+        .CodeMirror-hscrollbar {
+            z-index: 6 !important;
+        }
+
+        /* Webkit browsers (Chrome, Safari, Edge) */
+        .CodeMirror-vscrollbar::-webkit-scrollbar,
+        .CodeMirror-hscrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .CodeMirror-vscrollbar::-webkit-scrollbar-track,
+        .CodeMirror-hscrollbar::-webkit-scrollbar-track {
+            background: var(--grey-900);
+        }
+
+        .CodeMirror-vscrollbar::-webkit-scrollbar-thumb,
+        .CodeMirror-hscrollbar::-webkit-scrollbar-thumb {
+            background: var(--grey-700);
+            border-radius: 4px;
+        }
+
+        .CodeMirror-vscrollbar::-webkit-scrollbar-thumb:hover,
+        .CodeMirror-hscrollbar::-webkit-scrollbar-thumb:hover {
+            background: var(--grey-600);
+        }
+
+        /* Firefox */
+        .CodeMirror-vscrollbar,
+        .CodeMirror-hscrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: var(--grey-700) var(--grey-900);
+        }
+
+        /* Custom scrollbar for Markdown preview */
+        /* Webkit browsers */
+        .markdown-preview::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .markdown-preview::-webkit-scrollbar-track {
+            background: var(--grey-900);
+        }
+
+        .markdown-preview::-webkit-scrollbar-thumb {
+            background: var(--grey-700);
+            border-radius: 4px;
+        }
+
+        .markdown-preview::-webkit-scrollbar-thumb:hover {
+            background: var(--grey-600);
+        }
+
+        /* Firefox */
+        .markdown-preview {
+            scrollbar-width: thin;
+            scrollbar-color: var(--grey-700) var(--grey-900);
+        }
+
+        /* Custom scrollbar for Modal body */
+        /* Webkit browsers */
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-body::-webkit-scrollbar-track {
+            background: var(--grey-900);
+        }
+
+        .modal-body::-webkit-scrollbar-thumb {
+            background: var(--grey-700);
+            border-radius: 4px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: var(--grey-600);
+        }
+
+        /* Firefox */
+        .modal-body {
+            scrollbar-width: thin;
+            scrollbar-color: var(--grey-700) var(--grey-900);
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo">CodeExporter</div>
+        <input type="text" class="project-name-input" id="projectName" placeholder="Enter project name..."
+            value="untitled">
+        <div class="header-actions">
+            <button id="runBtn" class="secondary">Run Code (Ctrl+S)</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Left Panel: Code Editors -->
+        <div id="leftPanel" class="panel">
+            <div class="panel-content">
+                <div class="editors-container">
+                    <div id="htmlEditor" class="editor-section">
+                        <div class="panel-header">
+                            <span class="panel-title">HTML</span>
+                        </div>
+                        <textarea id="htmlCode"></textarea>
+                    </div>
+
+                    <div id="cssEditor" class="editor-section">
+                        <div class="panel-header">
+                            <span class="panel-title">CSS</span>
+                        </div>
+                        <textarea id="cssCode"></textarea>
+                    </div>
+
+                    <div id="jsEditor" class="editor-section">
+                        <div class="panel-header">
+                            <span class="panel-title">JavaScript</span>
+                        </div>
+                        <textarea id="jsCode"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Panel: Preview -->
+        <div id="middlePanel" class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Preview</span>
+            </div>
+            <div class="panel-content">
+                <iframe id="preview-iframe"></iframe>
+            </div>
+        </div>
+
+        <!-- Right Panel: Export Options -->
+        <div id="rightPanel" class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Export</span>
+            </div>
+            <div class="panel-content">
+                <div class="export-options">
+                    <button id="exportBtn" class="export-button">Export Files</button>
+
+                    <div class="option-group">
+                        <label>Markdown Preview</label>
+                        <div id="markdownPreview" class="markdown-preview">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📄</div>
+                                <div class="empty-state-text">
+                                    Write some code and click "Run Code" to see the markdown preview
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Export Options</h2>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <div class="modal-section-title">Export Format</div>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="exportFormat" value="markdown" checked>
+                            <span>Markdown Files (.md)</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="exportFormat" value="code">
+                            <span>Code Files (.html, .css, .js)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-section">
+                    <div class="modal-section-title">Select Files to Export</div>
+
+                    <label class="checkbox-option" id="htmlCheckboxWrapper">
+                        <input type="checkbox" id="exportHtml" checked>
+                        <div class="checkbox-option-content">
+                            <div class="checkbox-option-label">HTML</div>
+                            <div class="checkbox-option-desc">Export HTML code</div>
+                        </div>
+                    </label>
+
+                    <label class="checkbox-option" id="cssCheckboxWrapper">
+                        <input type="checkbox" id="exportCss" checked>
+                        <div class="checkbox-option-content">
+                            <div class="checkbox-option-label">CSS</div>
+                            <div class="checkbox-option-desc">Export CSS styles</div>
+                        </div>
+                    </label>
+
+                    <label class="checkbox-option" id="jsCheckboxWrapper">
+                        <input type="checkbox" id="exportJs" checked>
+                        <div class="checkbox-option-content">
+                            <div class="checkbox-option-label">JavaScript</div>
+                            <div class="checkbox-option-desc">Export JavaScript code</div>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="modal-section">
+                    <div class="modal-section-title">Additional Options</div>
+
+                    <label class="checkbox-option">
+                        <input type="checkbox" id="exportCombined">
+                        <div class="checkbox-option-content">
+                            <div class="checkbox-option-label">Also export combined file</div>
+                            <div class="checkbox-option-desc">Export all selected files combined into one .code.md file
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="secondary" id="cancelExport">Cancel</button>
+                <button id="confirmExport">Export</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize CodeMirror editors
+        const htmlEditor = CodeMirror.fromTextArea(document.getElementById('htmlCode'), {
+            mode: 'xml',
+            theme: 'dracula',
+            lineNumbers: true,
+            lineWrapping: true,
+            indentUnit: 2,
+            tabSize: 2
+        });
+
+        const cssEditor = CodeMirror.fromTextArea(document.getElementById('cssCode'), {
+            mode: 'css',
+            theme: 'dracula',
+            lineNumbers: true,
+            lineWrapping: true,
+            indentUnit: 2,
+            tabSize: 2
+        });
+
+        const jsEditor = CodeMirror.fromTextArea(document.getElementById('jsCode'), {
+            mode: 'javascript',
+            theme: 'dracula',
+            lineNumbers: true,
+            lineWrapping: true,
+            indentUnit: 2,
+            tabSize: 2
+        });
+
+        // Initialize Split.js
+        Split(['#leftPanel', '#middlePanel', '#rightPanel'], {
+            sizes: [30, 40, 30],
+            minSize: [250, 300, 250],
+            gutterSize: 8,
+            cursor: 'col-resize'
+        });
+
+        Split(['#htmlEditor', '#cssEditor', '#jsEditor'], {
+            direction: 'vertical',
+            sizes: [33, 33, 34],
+            minSize: 50,
+            gutterSize: 8,
+            cursor: 'row-resize'
+        });
+
+        // State
+        let currentCode = {
+            html: '',
+            css: '',
+            js: ''
+        };
+
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Run code and update preview
+        function runCode() {
+            currentCode.html = htmlEditor.getValue();
+            currentCode.css = cssEditor.getValue();
+            currentCode.js = jsEditor.getValue();
+
+            // Update preview
+            const iframe = document.getElementById('preview-iframe');
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+
+            const fullHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>${currentCode.css}</style>
+        </head>
+        <body>
+          ${currentCode.html}
+          <script>${currentCode.js}<\/script>
+        </body>
+        </html>
+      `;
+
+            doc.open();
+            doc.write(fullHTML);
+            doc.close();
+
+            // Update markdown preview
+            updateMarkdownPreview();
+
+            showToast('Code executed successfully', 'success');
+        }
+
+        // Generate markdown content
+        function generateMarkdown(includeHtml = true, includeCss = true, includeJs = true) {
+            let markdown = '';
+
+            if (includeHtml && currentCode.html.trim()) {
+                markdown += `### 🌐 HTML\n\n\`\`\`html\n${currentCode.html}\n\`\`\`\n\n`;
+            }
+
+            if (includeCss && currentCode.css.trim()) {
+                markdown += `### 🎨 CSS\n\n\`\`\`css\n${currentCode.css}\n\`\`\`\n\n`;
+            }
+
+            if (includeJs && currentCode.js.trim()) {
+                markdown += `### 📄 JavaScript\n\n\`\`\`javascript\n${currentCode.js}\n\`\`\`\n\n`;
+            }
+
+            return markdown;
+        }
+
+        // Update markdown preview
+        function updateMarkdownPreview() {
+            const preview = document.getElementById('markdownPreview');
+            const markdown = generateMarkdown();
+
+            if (markdown.trim()) {
+                preview.innerHTML = `<pre><code>${escapeHtml(markdown)}</code></pre>`;
+            } else {
+                preview.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📄</div>
+            <div class="empty-state-text">
+              Write some code and click "Run Code" to see the markdown preview
+            </div>
+          </div>
+        `;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Download file helper
+        function downloadFile(filename, content, type = 'text/plain') {
+            const blob = new Blob([content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Export functionality
+        function openExportModal() {
+            const hasHtml = currentCode.html.trim();
+            const hasCss = currentCode.css.trim();
+            const hasJs = currentCode.js.trim();
+
+            if (!hasHtml && !hasCss && !hasJs) {
+                showToast('No code to export! Write some code first.', 'error');
+                return;
+            }
+
+            // Update checkbox states based on available content
+            const htmlCheckbox = document.getElementById('exportHtml');
+            const cssCheckbox = document.getElementById('exportCss');
+            const jsCheckbox = document.getElementById('exportJs');
+            const htmlWrapper = document.getElementById('htmlCheckboxWrapper');
+            const cssWrapper = document.getElementById('cssCheckboxWrapper');
+            const jsWrapper = document.getElementById('jsCheckboxWrapper');
+
+            htmlCheckbox.checked = hasHtml;
+            cssCheckbox.checked = hasCss;
+            jsCheckbox.checked = hasJs;
+
+            htmlCheckbox.disabled = !hasHtml;
+            cssCheckbox.disabled = !hasCss;
+            jsCheckbox.disabled = !hasJs;
+
+            htmlWrapper.classList.toggle('disabled', !hasHtml);
+            cssWrapper.classList.toggle('disabled', !hasCss);
+            jsWrapper.classList.toggle('disabled', !hasJs);
+
+            document.getElementById('exportModal').classList.add('show');
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.remove('show');
+        }
+
+        function performExport() {
+            const projectName = document.getElementById('projectName').value.trim() || 'untitled';
+            const exportFormat = document.querySelector('input[name="exportFormat"]:checked').value;
+            const exportHtml = document.getElementById('exportHtml').checked;
+            const exportCss = document.getElementById('exportCss').checked;
+            const exportJs = document.getElementById('exportJs').checked;
+            const exportCombined = document.getElementById('exportCombined').checked;
+
+            if (!exportHtml && !exportCss && !exportJs) {
+                showToast('Please select at least one file to export!', 'error');
+                return;
+            }
+
+            try {
+                let downloadCount = 0;
+
+                if (exportFormat === 'markdown') {
+                    // Export individual markdown files
+                    if (exportHtml && currentCode.html.trim()) {
+                        const htmlMd = generateMarkdown(true, false, false);
+                        downloadFile(`${projectName}.html.md`, htmlMd, 'text/markdown');
+                        downloadCount++;
+                    }
+                    if (exportCss && currentCode.css.trim()) {
+                        const cssMd = generateMarkdown(false, true, false);
+                        downloadFile(`${projectName}.css.md`, cssMd, 'text/markdown');
+                        downloadCount++;
+                    }
+                    if (exportJs && currentCode.js.trim()) {
+                        const jsMd = generateMarkdown(false, false, true);
+                        downloadFile(`${projectName}.js.md`, jsMd, 'text/markdown');
+                        downloadCount++;
+                    }
+
+                    // Export combined if requested
+                    if (exportCombined) {
+                        const combinedMd = generateMarkdown(exportHtml, exportCss, exportJs);
+                        downloadFile(`${projectName}.code.md`, combinedMd, 'text/markdown');
+                        downloadCount++;
+                    }
+                } else {
+                    // Export code files
+                    if (exportHtml && currentCode.html.trim()) {
+                        downloadFile(`${projectName}.html`, currentCode.html, 'text/html');
+                        downloadCount++;
+                    }
+                    if (exportCss && currentCode.css.trim()) {
+                        downloadFile(`${projectName}.css`, currentCode.css, 'text/css');
+                        downloadCount++;
+                    }
+                    if (exportJs && currentCode.js.trim()) {
+                        downloadFile(`${projectName}.js`, currentCode.js, 'text/javascript');
+                        downloadCount++;
+                    }
+                }
+
+                closeExportModal();
+                showToast(`${downloadCount} file(s) downloaded successfully!`, 'success');
+            } catch (error) {
+                showToast('Export failed: ' + error.message, 'error');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('runBtn').addEventListener('click', runCode);
+        document.getElementById('exportBtn').addEventListener('click', openExportModal);
+        document.getElementById('closeModal').addEventListener('click', closeExportModal);
+        document.getElementById('cancelExport').addEventListener('click', closeExportModal);
+        document.getElementById('confirmExport').addEventListener('click', performExport);
+
+        // Close modal when clicking outside
+        document.getElementById('exportModal').addEventListener('click', (e) => {
+            if (e.target.id === 'exportModal') {
+                closeExportModal();
+            }
+        });
+
+        // Keyboard shortcuts
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                runCode();
+            }
+        });
+
+        // Set default code examples
+        htmlEditor.setValue(`<div class="container">
+  <h1>Hello World</h1>
+  <p>Welcome to CodeExporter!</p>
+</div>`);
+
+        cssEditor.setValue(`.container {
+  max-width: 800px;
+  margin: 50px auto;
+  padding: 20px;
+  font-family: sans-serif;
+}
+
+h1 {
+  color: #bee002;
+  font-size: 2.5em;
+}
+
+p {
+  color: #666;
+  line-height: 1.6;
+}`);
+
+        jsEditor.setValue(`console.log('CodeExporter loaded!');
+
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM ready');
+});`);
+
+        // Initial run
+        setTimeout(() => runCode(), 100);
+    </script>
+</body>
+
+</html>
