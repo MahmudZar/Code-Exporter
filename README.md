@@ -15,6 +15,7 @@ CodeExporter helps you share code with AI assistants like Claude and ChatGPT. In
 - ✏️ Write HTML, CSS, and JavaScript in split-panel editors
 - 👁️ Live preview as you code
 - 📄 Export to Markdown format (`.html.md`, `.css.md`, `.js.md`)
+- 📦 Export combined file (`.code.md`) - all code in one file
 - 💾 Export as code files (`.html`, `.css`, `.js`)
 - ⌨️ Keyboard shortcut: `Ctrl+S` to run code
 
@@ -23,7 +24,10 @@ CodeExporter helps you share code with AI assistants like Claude and ChatGPT. In
 1. Write your code in the three editors (HTML, CSS, JavaScript)
 2. Press `Ctrl+S` or click "Run Code" to preview
 3. Click "Export Files" to download your code
-4. Choose Markdown format for sharing with AI assistants
+4. Choose your export format:
+   - **Individual Markdown Files** - Separate `.md` files for each code type
+   - **Individual Code Files** - Raw `.html`, `.css`, `.js` files
+   - **Combined Markdown File** - All code in one `.code.md` file (perfect for AI assistants)
 
 ## Why Markdown?
 
@@ -39,7 +43,7 @@ LLMs handle Markdown files better than raw code pasted in chat. Markdown preserv
 
 ```bash
 # Clone the repo
-git clone https://github.com/MahmudZar/Code-Exporter?tab=readme-ov-file
+git clone https://github.com/MahmudZar/Code-Exporter.git
 
 # Open index.html in your browser
 open index.html
