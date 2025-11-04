@@ -49,6 +49,9 @@ let currentCode = {
     js: ''
 };
 
+// NEW: Add preview state
+let currentPreviewView = 'combined'; // 'combined', 'html', 'css', or 'js'
+
 // Toast notification
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
@@ -116,29 +119,208 @@ function generateMarkdown(includeHtml = true, includeCss = true, includeJs = tru
     return markdown;
 }
 
-// Update markdown preview
+// Update markdown preview based on current view
 function updateMarkdownPreview() {
     const preview = document.getElementById('markdownPreview');
-    const markdown = generateMarkdown();
+    let markdown = '';
+    
+    // Generate markdown based on current view
+    switch(currentPreviewView) {
+        case 'html':
+            markdown = generateMarkdown(true, false, false);
+            break;
+        case 'css':
+            markdown = generateMarkdown(false, true, false);
+            break;
+        case 'js':
+            markdown = generateMarkdown(false, false, true);
+            break;
+        case 'combined':
+        default:
+            markdown = generateMarkdown(true, true, true);
+            break;
+    }
 
     if (markdown.trim()) {
         preview.innerHTML = `<pre><code>${escapeHtml(markdown)}</code></pre>`;
     } else {
+        const viewLabel = currentPreviewView === 'combined' ? 'code' : currentPreviewView.toUpperCase();
         preview.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">📄</div>
-            <div class="empty-state-text">
-              Write some code and click "Run Code" to see the markdown preview
+            <div class="empty-state">
+                <div class="empty-state-icon">📄</div>
+                <div class="empty-state-text">
+                    No ${viewLabel} code available. Write some code and click "Run Code".
+                </div>
             </div>
-          </div>
         `;
     }
+    
+    // Update tab states
+    updateTabStates();
 }
 
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Update tab button states based on available code
+function updateTabStates() {
+    const hasHtml = currentCode.html.trim();
+    const hasCss = currentCode.css.trim();
+    const hasJs = currentCode.js.trim();
+    
+    const tabs = document.querySelectorAll('.preview-tab');
+    tabs.forEach(tab => {
+        const view = tab.dataset.view;
+        let shouldDisable = false;
+        
+        if (view === 'html' && !hasHtml) shouldDisable = true;
+        if (view === 'css' && !hasCss) shouldDisable = true;
+        if (view === 'js' && !hasJs) shouldDisable = true;
+        if (view === 'combined' && !hasHtml && !hasCss && !hasJs) shouldDisable = true;
+        
+        tab.classList.toggle('disabled', shouldDisable);
+        
+        // If current view is disabled, switch to combined
+        if (shouldDisable && tab.classList.contains('active')) {
+            currentPreviewView = 'combined';
+            document.querySelector('.preview-tab[data-view="combined"]').classList.add('active');
+            tab.classList.remove('active');
+            updateMarkdownPreview();
+        }
+    });
+    
+    // Update copy button state
+    const copyBtn = document.getElementById('copyMarkdownBtn');
+    const hasAnyCode = hasHtml || hasCss || hasJs;
+    if (copyBtn) {
+        copyBtn.disabled = !hasAnyCode;
+    }
+}
+
+// Get markdown for current view
+function getCurrentViewMarkdown() {
+    switch(currentPreviewView) {
+        case 'html':
+            return generateMarkdown(true, false, false);
+        case 'css':
+            return generateMarkdown(false, true, false);
+        case 'js':
+            return generateMarkdown(false, false, true);
+        case 'combined':
+        default:
+            return generateMarkdown(true, true, true);
+    }
+}
+
+// State tracking for copy operation
+let copyTimeout = null;
+let isCopying = false;
+
+// Copy markdown to clipboard (UPDATED VERSION)
+async function copyMarkdownToClipboard() {
+    // Prevent multiple simultaneous copy operations
+    if (isCopying) {
+        return;
+    }
+    
+    const markdown = getCurrentViewMarkdown();
+    
+    if (!markdown.trim()) {
+        showToast('No code to copy!', 'error');
+        return;
+    }
+    
+    isCopying = true;
+    const copyBtn = document.getElementById('copyMarkdownBtn');
+    const originalText = copyBtn.innerHTML;
+    
+    try {
+        // Modern Clipboard API
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(markdown);
+        } else {
+            // Fallback for older browsers or HTTP
+            const textArea = document.createElement('textarea');
+            textArea.value = markdown;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+        }
+        
+        // Clear any existing timeout
+        if (copyTimeout) {
+            clearTimeout(copyTimeout);
+            copyTimeout = null;
+        }
+        
+        // Determine what was copied for specific feedback
+        let copyMessage = '';
+        switch(currentPreviewView) {
+            case 'html':
+                copyMessage = 'HTML markdown copied to clipboard!';
+                break;
+            case 'css':
+                copyMessage = 'CSS markdown copied to clipboard!';
+                break;
+            case 'js':
+                copyMessage = 'JavaScript markdown copied to clipboard!';
+                break;
+            case 'combined':
+            default:
+                copyMessage = 'Combined markdown copied to clipboard!';
+                break;
+        }
+        
+        // Visual feedback
+        copyBtn.innerHTML = '✓ Copied!';
+        copyBtn.classList.add('copied');
+        copyBtn.disabled = true; // Prevent clicks during reset
+        
+        showToast(copyMessage, 'success');
+        
+        // Reset button after 2 seconds
+        copyTimeout = setTimeout(() => {
+            copyBtn.innerHTML = originalText;
+            copyBtn.classList.remove('copied');
+            copyBtn.disabled = false;
+            isCopying = false;
+            copyTimeout = null;
+        }, 2000);
+        
+    } catch (error) {
+        showToast('Failed to copy to clipboard', 'error');
+        console.error('Copy failed:', error);
+        
+        // Reset state immediately on error
+        copyBtn.innerHTML = originalText;
+        copyBtn.classList.remove('copied');
+        copyBtn.disabled = false;
+        isCopying = false;
+        
+        if (copyTimeout) {
+            clearTimeout(copyTimeout);
+            copyTimeout = null;
+        }
+    }
+}
+
+// Handle tab switching
+function switchPreviewTab(view) {
+    currentPreviewView = view;
+    
+    // Update active tab
+    document.querySelectorAll('.preview-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.view === view);
+    });
+    
+    // Update preview
+    updateMarkdownPreview();
 }
 
 // Download file helper
@@ -304,6 +486,36 @@ function sanitizeFilename(name) {
         .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
 }
 
+// NEW EVENT LISTENERS
+
+// Initialize event listeners when DOM is ready
+function initializePreviewListeners() {
+    // Tab switching
+    document.querySelectorAll('.preview-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            if (!tab.classList.contains('disabled')) {
+                switchPreviewTab(tab.dataset.view);
+            }
+        });
+    });
+
+    // Copy markdown button
+    const copyBtn = document.getElementById('copyMarkdownBtn');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', copyMarkdownToClipboard);
+    }
+}
+
+// Initialize on DOM ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializePreviewListeners);
+} else {
+    // DOM is already ready
+    initializePreviewListeners();
+}
+
+// EXISTING EVENT LISTENERS BELOW
+
 // Event listeners
 document.getElementById('runBtn').addEventListener('click', runCode);
 document.getElementById('exportBtn').addEventListener('click', openExportModal);
@@ -356,4 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });`);
 
 // Initial run
-setTimeout(() => runCode(), 100);
+setTimeout(() => {
+    runCode();
+    updateTabStates(); // NEW: Initialize tab states
+}, 100);

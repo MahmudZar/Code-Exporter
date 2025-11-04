@@ -187,13 +187,15 @@ button.secondary:hover {
 
 /* Export Panel */
 .export-options {
+    height: 100%;
     padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 0; /* Changed from 20px - spacing now controlled by individual elements */
 }
 
 .option-group {
+    
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -210,7 +212,7 @@ button.secondary:hover {
     width: 100%;
     padding: 12px;
     font-size: 15px;
-    margin-top: 10px;
+    margin-bottom: 0; /* Remove bottom margin since container handles spacing */
 }
 
 /* Modal */
@@ -489,7 +491,7 @@ button.secondary:hover {
 .markdown-preview {
     padding: 20px;
     height: 100%;
-    max-height: calc(100vh - 300px);
+    max-height: calc(100vh - 30px);
     overflow-y: auto;
     font-family: 'Consolas', 'Monaco', monospace;
     font-size: 13px;
@@ -503,11 +505,102 @@ button.secondary:hover {
     padding: 12px;
     border-radius: 4px;
     overflow-x: auto;
+    height: 100%;
 }
 
 .markdown-preview code {
     color: var(--primary-400);
 }
+
+/* Preview Controls Container */
+.preview-controls-container {
+    margin-top: 24px; /* Larger gap from Export button */
+    padding-top: 24px;
+    border-top: 1px solid var(--grey-800); /* Visual separator */
+}
+
+.preview-section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--grey-300);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+/* Preview Tabs */
+.preview-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    background: var(--grey-850);
+    padding: 4px;
+    border-radius: 6px;
+}
+
+.preview-tab {
+    flex: 1;
+    padding: 8px 12px;
+    background: transparent;
+    color: var(--grey-400);
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.preview-tab:hover {
+    background: var(--grey-800);
+    color: var(--grey-200);
+    transform: none;
+}
+
+.preview-tab.active {
+    background: var(--primary-400);
+    color: var(--grey-950);
+}
+
+.preview-tab.active:hover {
+    background: var(--primary-300);
+}
+
+.preview-tab.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Preview Actions */
+.preview-actions {
+    margin-bottom: 16px; /* Increased from 12px for better spacing */
+}
+
+.copy-button {
+    width: 100%;
+    padding: 10px 16px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s; /* Smooth transitions */
+}
+
+.copy-button:disabled {
+    /* opacity: 0.5; */
+    cursor: not-allowed;
+    pointer-events: none; /* Prevent any interaction when disabled */
+}
+
+.copy-button.copied {
+    background: var(--primary-500);
+    color: black;
+}
+
+/* REMOVED: .copy-button.copied::before - This was causing duplicate checkmarks */
 
 /* Gutter */
 .gutter {
